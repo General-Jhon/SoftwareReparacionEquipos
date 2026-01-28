@@ -1,7 +1,3 @@
-+-------------------------------------------+
-|SOFTWARE FOR REPAIRING ELECTRONIC EQUIPMENT|
-+-------------------------------------------+
-
 Proyect:RepairEquipment
 
 This software allows you to register Equipment, Clients, Service Orders, Diagnostics, Repair Statuses and complete process tracking.
