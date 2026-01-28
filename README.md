@@ -1,2 +1,37 @@
-# SoftwareReparacionEquipos
-Repositorio  creado para la clase de Linea De Enfasis I en el cual se subira el progreso del proyecto elegido, en este caso un SOFTWARE DE REPARACION DE EQUIPOS.
++-------------------------------------------+
+|SOFTWARE FOR REPAIRING ELECTRONIC EQUIPMENT|
++-------------------------------------------+
+
+Proyect:RepairEquipment
+
+This software allows you to register Equipment, Clients, Service Orders, Diagnostics, Repair Statuses and complete process tracking.
+
+##Main Characteristics
+- Customer Registration
+- Equipment inventory (PCs, laptops, printers, etc.)
+- Service statuses (Received, Under Diagnosis, Under Repair, Ready, Delivered)
+- Repair history by equipment
+- Technician management
+- Observations and technical diagnosis
+- Control of repair dates and times
+- User roles (Administrator, Technician, Reception)
+
+##System modules
+- **Customers** 
+- **Equipment**
+- **Service order**
+- **technical**
+- **Tracking statuses**
+- **Reports**
+
+##technologies
+- Frontend:
++ HTML5
++ CSS3
++ JavaScript
+
+- Backend:
++ NodeJs
++ NestJs
+
+-DB:mysql
