@@ -28,6 +28,5 @@ This software allows you to register Equipment, Clients, Service Orders, Diagnos
 
 - Backend:
 + NodeJs
-+ NestJs
 
 -DB:mysql
