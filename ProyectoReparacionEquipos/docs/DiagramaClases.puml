@@ -1,0 +1,96 @@
+@startuml
+
+'PARA VISUALIZAR EL DIAGRAMA SE DEBE USAR ALT + D '
+skinparam classAttributeIconSize 0
+hide circle
+hide empty members
+
+enum TipoRol {
+  ADMINISTRADOR
+  TECNICO
+  USUARIO
+}
+
+enum EstadoServicio {
+  RECIBIDO
+  EN_DIAGNOSTICO
+  EN_REPARACION
+  LISTO
+  ENTREGADO
+}
+
+' =========================
+' Usuarios y roles
+' =========================
+class UsuarioSistema {
+  +id: int
+  +nombreCompleto: string
+  +correo: string
+  +hashPassword: string
+  +activo: bool
+}
+
+class Rol {
+  +id: int
+  +tipo: TipoRol
+}
+
+UsuarioSistema "1" -- "1" Rol : tiene >
+
+' =========================
+' Dominio: clientes y equipos
+' =========================
+class Cliente {
+  +id: int
+  +nombre: string
+  +telefono: string
+  +correo: string
+}
+
+class Equipo {
+  +id: int
+  +tipo: string
+  +marca: string
+  +modelo: string
+  +serial: string
+}
+
+' =========================
+' Orden de servicio
+' =========================
+class OrdenServicio {
+  +id: int
+  +fechaCreacion: datetime
+  +descripcionProblema: string
+  +estadoActual: EstadoServicio
+}
+
+class Diagnostico {
+  +id: int
+  +fecha: datetime
+  +notas: text
+}
+
+class HistorialEstado {
+  +id: int
+  +estado: EstadoServicio
+  +fechaCambio: datetime
+  +nota: string
+}
+
+' =========================
+' Relaciones
+' =========================
+Cliente "1" o-- "0..*" Equipo : posee
+Cliente "1" -- "0..*" OrdenServicio : solicita
+Equipo "1" -- "0..*" OrdenServicio : correspondeA
+
+UsuarioSistema "1" -- "0..*" OrdenServicio : creadaPor
+UsuarioSistema "0..1" -- "0..*" OrdenServicio : asignadaA
+
+OrdenServicio "1" o-- "0..*" Diagnostico : tiene
+OrdenServicio "1" o-- "0..*" HistorialEstado : registra
+
+UsuarioSistema "0..1" -- "0..*" HistorialEstado : cambiadoPor
+
+@enduml
