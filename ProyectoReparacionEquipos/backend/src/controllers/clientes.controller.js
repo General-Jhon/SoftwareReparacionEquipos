@@ -32,6 +32,21 @@ export const getCliente = async (req, res) => {
   }
 };
 
+export const getMiPerfilCliente = async (req, res) => {
+  const clienteId = Number(req.user?.cliente_id || 0);
+  if (!clienteId) return res.status(403).json({ error: "cliente no asociado" });
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, nombre, apellido, documento, telefono, email, direccion, ciudad, notas FROM clientes WHERE id = ? LIMIT 1",
+      [clienteId]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: "cliente no encontrado" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: String(err.message || err) });
+  }
+};
+
 export const createCliente = async (req, res) => {
   const { nombre, apellido, documento, telefono, email, direccion, ciudad, notas } = req.body || {};
   if (!nombre || !apellido) return badRequest(res, "nombre y apellido son requeridos");
@@ -57,6 +72,30 @@ export const updateCliente = async (req, res) => {
       [nombre, apellido, documento || null, telefono || null, email || null, direccion || null, ciudad || null, notas || null, id]
     );
     if (result.affectedRows === 0) return res.status(404).json({ error: "cliente no encontrado" });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: String(err.message || err) });
+  }
+};
+
+export const updateMiPerfilCliente = async (req, res) => {
+  const clienteId = Number(req.user?.cliente_id || 0);
+  if (!clienteId) return res.status(403).json({ error: "cliente no asociado" });
+  const { nombre, apellido, telefono, direccion, ciudad } = req.body || {};
+  if (!nombre || !apellido) return badRequest(res, "nombre y apellido son requeridos");
+  try {
+    const [result] = await pool.query(
+      "UPDATE clientes SET nombre = ?, apellido = ?, telefono = ?, direccion = ?, ciudad = ? WHERE id = ?",
+      [nombre, apellido, telefono || null, direccion || null, ciudad || null, clienteId]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: "cliente no encontrado" });
+
+    // Mantiene sincronizado el nombre/teléfono visible en la cuenta de usuario
+    await pool.query(
+      "UPDATE usuarios SET nombre = ?, apellido = ?, telefono = ? WHERE id = ?",
+      [nombre, apellido, telefono || null, req.user.id]
+    );
+
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: String(err.message || err) });

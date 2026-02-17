@@ -4,12 +4,17 @@ import { authRequired, requireAnyRole, requireRole } from "../middleware/auth.js
 import {
   listClientes,
   getCliente,
+  getMiPerfilCliente,
   createCliente,
   updateCliente,
+  updateMiPerfilCliente,
   deleteCliente,
 } from "../controllers/clientes.controller.js";
 
 const router = express.Router();
+
+router.get("/clientes/me", authRequired, requireRole("Cliente"), getMiPerfilCliente);
+router.put("/clientes/me", authRequired, requireRole("Cliente"), updateMiPerfilCliente);
 
 router.get(
   "/clientes",

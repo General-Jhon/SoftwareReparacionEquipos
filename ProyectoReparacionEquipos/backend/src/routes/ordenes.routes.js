@@ -12,6 +12,8 @@ import {
   assignSugerido,
   listMisOrdenes,
   getMisOrden,
+  getMiFactura,
+  getFacturaOrden,
   createPago,
   listPagos,
   listPagosAdmin,
@@ -65,10 +67,17 @@ router.post("/ordenes/:id/asignar-sugerido", authRequired, requireRole("Administ
 router.get("/mis-ordenes", authRequired, requireRole("Cliente"), listMisOrdenes);
 
 router.get("/mis-ordenes/:id", authRequired, requireRole("Cliente"), getMisOrden);
+router.get("/mis-ordenes/:id/factura", authRequired, requireRole("Cliente"), getMiFactura);
+router.get(
+  "/ordenes/:id/factura",
+  authRequired,
+  requireAnyRole(["Administrador", "Recepcion"]),
+  getFacturaOrden
+);
 
 router.post("/ordenes/:id/pagos", authRequired, createPago);
 
 router.get("/ordenes/:id/pagos", authRequired, listPagos);
-router.get("/pagos", authRequired, requireRole("Administrador"), listPagosAdmin);
+router.get("/pagos", authRequired, requireAnyRole(["Administrador", "Recepcion"]), listPagosAdmin);
 
 export default router;
