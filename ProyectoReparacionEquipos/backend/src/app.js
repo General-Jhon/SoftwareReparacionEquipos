@@ -11,6 +11,7 @@ import ordenesRoutes from "./routes/ordenes.routes.js";
 import gruposRoutes from "./routes/grupos.routes.js";
 import reglasRoutes from "./routes/reglas.routes.js";
 import tecnicosRoutes from "./routes/tecnicos.routes.js";
+import usuariosRoutes from "./routes/usuarios.routes.js";
 
 dotenv.config();
 
@@ -36,5 +37,6 @@ app.use("/api", ordenesRoutes);
 app.use("/api", gruposRoutes);
 app.use("/api", reglasRoutes);
 app.use("/api", tecnicosRoutes);
+app.use("/api", usuariosRoutes);
 
 export default app;
