@@ -1,4 +1,4 @@
-# RepairEquipment
+# RepairEquipment.
 
 [![Status](https://img.shields.io/badge/status-active-success)](#)
 [![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20Vite-61dafb)](#tech-stack)
