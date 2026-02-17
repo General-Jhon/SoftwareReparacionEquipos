@@ -1,83 +1,89 @@
 HISTORIAS DE USUARIO
 
-1) Registrar equipo y crear orden (Técnico)
+## HU-01 Registrar cliente, equipo y orden (Recepción/Admin)
 
-Como Técnico
-quiero registrar los datos del cliente y del equipo, y crear una orden de servicio
-para iniciar el proceso de reparación con trazabilidad desde el ingreso.
-
-Criterios de aceptación
-
-El técnico puede crear/seleccionar un Cliente (nombre, teléfono, correo opcional).
-
-El técnico puede registrar un Equipo asociado al cliente (tipo, marca, modelo, serial obligatorio).
-
-El sistema valida que el serial no quede vacío y advierte si ya existe (según tu regla: global o por cliente).
-
-Al crear la Orden de Servicio, el estado inicial queda en RECIBIDO y se guarda la descripción del problema.
-
-Se crea automáticamente un registro en Historial de Estados con: estado RECIBIDO, fecha/hora y técnico responsable.
-
-La orden queda disponible para que el usuario la pueda ver (si tiene cuenta asociada al cliente).
-
-2) Consultar estado de la orden (Usuario/Cliente)
-
-Como Usuario (Cliente)
-quiero consultar el estado actual y el historial de mi orden de servicio
-para saber en qué etapa está mi equipo sin tener que llamar o ir al local.
+Como usuario de Recepción o Administrador  
+quiero registrar clientes, equipos y órdenes de servicio  
+para iniciar el flujo de reparación con trazabilidad desde la recepción.
 
 Criterios de aceptación
 
-El usuario puede crear una cuenta e iniciar sesión.
+- Se puede crear cliente con nombre y apellido obligatorios.
+- Se puede crear equipo asociado a un cliente (marca y serie obligatorias).
+- Se puede crear orden con código, cliente, equipo y falla reportada obligatorios.
+- Al crear la orden, el estado inicial queda en `Recibido` (o el seleccionado si aplica).
+- Se registra historial de estado automáticamente al crear la orden.
+- La orden queda visible para Admin, Técnico, Recepción y Cliente asociado.
 
-El usuario solo puede ver sus propias órdenes (asociadas a su cliente/cuenta).
+## HU-02 Gestionar ciclo técnico de la orden (Técnico)
 
-En cada orden, puede ver:
-
-Estado actual (RECIBIDO, EN_DIAGNOSTICO, EN_REPARACION, LISTO, ENTREGADO)
-
-Fechas/horas de cambios de estado (historial)
-
-Notas públicas del seguimiento (si decides mostrarlas)
-
-Si el usuario intenta acceder a una orden que no es suya, el sistema lo bloquea (403/“no autorizado”).
-
-La información mostrada coincide con el último evento del historial (y con estadoActual).
-
-3) Realizar pago del servicio (Usuario/Cliente)
-
-Como Usuario (Cliente)
-quiero pagar el servicio asociado a mi orden
-para confirmar el pago y poder avanzar al proceso de entrega.
+Como Técnico  
+quiero actualizar estado, diagnóstico y observaciones de mis órdenes asignadas  
+para mantener el avance técnico actualizado.
 
 Criterios de aceptación
 
-El usuario puede ver el valor total (o el saldo) de la orden cuando esté en un estado permitido (por ejemplo LISTO o cuando el técnico lo habilite).
+- El técnico puede ver sus órdenes y filtrar por estado/búsqueda.
+- El técnico puede actualizar estado, diagnóstico y observaciones.
+- El técnico no gestiona costo final desde su modal operativo.
+- Cada cambio de estado queda reflejado en historial.
+- Si ocurre error de actualización, se muestra mensaje de error al técnico.
 
-El usuario puede escoger un método de pago (ej.: efectivo, transferencia, tarjeta, pasarela) según lo que implementes.
+## HU-03 Gestionar grupos y reglas de asignación (Admin)
 
-Al confirmar el pago:
+Como Administrador  
+quiero crear grupos responsables, asignar técnicos y definir reglas por palabras clave  
+para automatizar y ordenar la asignación técnica.
 
-Se registra un Pago con fecha/hora, valor, método y referencia (si aplica).
+Criterios de aceptación
 
-La orden queda marcada como pagada (campo pagado=true o saldo=0).
+- Admin puede crear/editar/eliminar grupos.
+- Admin puede asignar y remover técnicos de grupos.
+- Admin puede crear/editar/eliminar reglas con prioridad.
+- Las reglas permiten sugerir grupo/técnico desde texto de falla/diagnóstico.
 
-El usuario puede ver un comprobante/resumen del pago.
+## HU-04 Gestión de usuarios y seguridad (Admin)
 
-Si el pago falla o queda incompleto, el sistema no marca como pagado y muestra el motivo.
+Como Administrador  
+quiero administrar usuarios, roles y credenciales  
+para mantener control de acceso por perfil.
 
-Nota: Si quieres, en esta historia podemos agregar la regla: “solo se puede pasar a ENTREGADO si está pagada”.
+Criterios de aceptación
 
-Sugerencia mínima de clases/entidades por estas historias
+- Admin puede crear usuarios con rol (`Administrador`, `Tecnico`, `Recepcion`, `Cliente`).
+- Admin puede editar rol, estado activo/inactivo y datos básicos de usuario.
+- Admin puede resetear contraseña de cualquier usuario.
+- Admin puede eliminar usuarios con restricciones de seguridad:
+- no puede eliminar su propio usuario.
+- no se permite eliminar el último administrador activo.
+- Si se crea/edita un usuario con rol `Cliente`, se sincroniza con la tabla `clientes`.
+- Si se crea/edita un usuario con rol `Tecnico`, se sincroniza con la tabla `tecnicos`.
 
-UsuarioSistema (con rol)
+## HU-05 Registro de pago en punto de atención (Recepción/Admin)
 
-Cliente
+Como usuario de Recepción o Administrador  
+quiero registrar pagos en mostrador (efectivo/tarjeta/transferencia)  
+para cerrar saldo de órdenes listas para entrega.
 
-Equipo
+Criterios de aceptación
 
-OrdenServicio (con estadoActual, total, pagado o saldo)
+- Solo se permite pago para órdenes en estado `Listo` o `Entregado`.
+- No se permite registrar pagos si la orden ya está totalmente pagada.
+- No se permite registrar un valor mayor al saldo pendiente.
+- Al registrar pago, se actualizan `saldo` y `pagado` en la orden.
+- Recepción puede consultar historial de pagos.
 
-HistorialEstado
+## HU-06 Portal cliente: consulta de orden y pago en línea (Cliente)
 
-Pago (si vas a permitir pagos dentro del sistema)
+Como Cliente  
+quiero ver el estado de mis órdenes, el técnico/grupo asignado y realizar el pago  
+para hacer seguimiento sin depender de atención presencial.
+
+Criterios de aceptación
+
+- Cliente solo ve sus propias órdenes.
+- En cada orden visualiza estado, historial, diagnóstico, técnico y grupo asignado.
+- Si la orden está `Listo` o `Entregado` y tiene saldo, aparece botón `Pagar`.
+- Se permite simulación de pago con tarjeta (validación básica de campos).
+- Al pagar, se actualiza inmediatamente el saldo de la orden.
+

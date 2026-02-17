@@ -1,6 +1,6 @@
 @startuml
 
-'PARA VISUALIZAR EL DIAGRAMA SE DEBE USAR ALT + D '
+' Visualizar en VS Code con la extension PlantUML (Alt + D)
 skinparam classAttributeIconSize 0
 hide circle
 hide empty members
@@ -8,10 +8,11 @@ hide empty members
 enum TipoRol {
   ADMINISTRADOR
   TECNICO
-  USUARIO
+  RECEPCION
+  CLIENTE
 }
 
-enum EstadoServicio {
+enum EstadoOrden {
   RECIBIDO
   EN_DIAGNOSTICO
   EN_REPARACION
@@ -19,78 +20,137 @@ enum EstadoServicio {
   ENTREGADO
 }
 
-' =========================
-' Usuarios y roles
-' =========================
-class UsuarioSistema {
-  +id: int
-  +nombreCompleto: string
-  +correo: string
-  +hashPassword: string
-  +activo: bool
-}
-
 class Rol {
   +id: int
-  +tipo: TipoRol
+  +nombre: TipoRol
+  +descripcion: string
 }
 
-UsuarioSistema "1" -- "1" Rol : tiene >
+class Usuario {
+  +id: int
+  +nombre: string
+  +apellido: string
+  +email: string
+  +telefono: string
+  +passwordHash: string
+  +activo: bool
+  +iniciarSesion()
+}
 
-' =========================
-' Dominio: clientes y equipos
-' =========================
 class Cliente {
   +id: int
   +nombre: string
+  +apellido: string
+  +documento: string
   +telefono: string
-  +correo: string
+  +email: string
+  +direccion: string
+  +ciudad: string
+  +actualizarPerfil()
+}
+
+class Tecnico {
+  +id: int
+  +nombre: string
+  +apellido: string
+  +email: string
+  +especialidad: string
+  +activo: bool
+}
+
+class GrupoResponsable {
+  +id: int
+  +nombre: string
+  +descripcion: string
+  +activo: bool
+}
+
+class ReglaAsignacion {
+  +id: int
+  +palabrasClave: string
+  +prioridad: int
+  +activo: bool
+  +evaluar(texto): bool
+}
+
+class TipoEquipo {
+  +id: int
+  +nombre: string
 }
 
 class Equipo {
   +id: int
-  +tipo: string
   +marca: string
   +modelo: string
-  +serial: string
+  +serie: string
+  +color: string
+  +accesorios: string
 }
 
-' =========================
-' Orden de servicio
-' =========================
 class OrdenServicio {
   +id: int
-  +fechaCreacion: datetime
-  +descripcionProblema: string
-  +estadoActual: EstadoServicio
-}
-
-class Diagnostico {
-  +id: int
-  +fecha: datetime
-  +notas: text
+  +codigo: string
+  +fallaReportada: string
+  +diagnostico: string
+  +observaciones: string
+  +fechaRecepcion: datetime
+  +fechaEntregaEstimada: datetime
+  +fechaEntregaReal: datetime
+  +costoEstimado: decimal
+  +costoFinal: decimal
+  +saldo: decimal
+  +pagado: bool
+  +estado: EstadoOrden
+  +asignarTecnico()
+  +cambiarEstado()
+  +registrarPago()
 }
 
 class HistorialEstado {
   +id: int
-  +estado: EstadoServicio
-  +fechaCambio: datetime
-  +nota: string
+  +estado: EstadoOrden
+  +comentario: string
+  +fecha: datetime
 }
 
-' =========================
-' Relaciones
-' =========================
-Cliente "1" o-- "0..*" Equipo : posee
-Cliente "1" -- "0..*" OrdenServicio : solicita
-Equipo "1" -- "0..*" OrdenServicio : correspondeA
+class Pago {
+  +id: int
+  +metodo: string
+  +valor: decimal
+  +referencia: string
+  +fecha: datetime
+}
 
-UsuarioSistema "1" -- "0..*" OrdenServicio : creadaPor
-UsuarioSistema "0..1" -- "0..*" OrdenServicio : asignadaA
+class Factura {
+  +numero: string
+  +fechaEmision: datetime
+  +total: decimal
+  +saldo: decimal
+  +generarPDF()
+}
 
-OrdenServicio "1" o-- "0..*" Diagnostico : tiene
-OrdenServicio "1" o-- "0..*" HistorialEstado : registra
+Rol "1" -- "0..*" Usuario : asigna >
+Cliente "1" -- "0..1" Usuario : perfilLogin >
 
-UsuarioSistema "0..1" -- "0..*" HistorialEstado : cambiadoPor
+Cliente "1" -- "0..*" Equipo : posee >
+TipoEquipo "1" -- "0..*" Equipo : clasifica >
+
+Cliente "1" -- "0..*" OrdenServicio : solicita >
+Equipo "1" -- "0..*" OrdenServicio : correspondeA >
+Tecnico "0..1" -- "0..*" OrdenServicio : asignado >
+GrupoResponsable "0..1" -- "0..*" OrdenServicio : responsable >
+
+OrdenServicio "1" o-- "0..*" HistorialEstado : registra >
+Usuario "0..1" -- "0..*" HistorialEstado : actualizadoPor >
+
+OrdenServicio "1" o-- "0..*" Pago : recibe >
+Cliente "1" -- "0..*" Pago : realiza >
+Usuario "0..1" -- "0..*" Pago : registradoPor >
+
+OrdenServicio "1" -- "0..1" Factura : genera >
+
+Tecnico "1" -- "0..*" GrupoResponsable : perteneceA >
+GrupoResponsable "1" -- "0..*" ReglaAsignacion : define >
+Tecnico "0..1" -- "0..*" ReglaAsignacion : sugiere >
 
 @enduml
