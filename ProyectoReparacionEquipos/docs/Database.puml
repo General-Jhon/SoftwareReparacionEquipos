@@ -1,0 +1,173 @@
+@startuml
+hide circle
+skinparam linetype ortho
+
+entity roles {
+  *id : INT
+  --
+  nombre : VARCHAR
+  descripcion : VARCHAR
+  creado_en : DATETIME
+}
+
+entity usuarios {
+  *id : INT
+  --
+  rol_id : INT
+  cliente_id : INT
+  nombre : VARCHAR
+  apellido : VARCHAR
+  email : VARCHAR
+  telefono : VARCHAR
+  password_hash : VARCHAR
+  activo : TINYINT
+  creado_en : DATETIME
+  actualizado_en : DATETIME
+}
+
+entity clientes {
+  *id : INT
+  --
+  nombre : VARCHAR
+  apellido : VARCHAR
+  documento : VARCHAR
+  telefono : VARCHAR
+  email : VARCHAR
+  direccion : VARCHAR
+  ciudad : VARCHAR
+  notas : TEXT
+  creado_en : DATETIME
+  actualizado_en : DATETIME
+}
+
+entity tecnicos {
+  *id : INT
+  --
+  nombre : VARCHAR
+  apellido : VARCHAR
+  telefono : VARCHAR
+  email : VARCHAR
+  especialidad : VARCHAR
+  activo : TINYINT
+  creado_en : DATETIME
+  actualizado_en : DATETIME
+}
+
+entity grupos_responsables {
+  *id : INT
+  --
+  nombre : VARCHAR
+  descripcion : VARCHAR
+  activo : TINYINT
+  creado_en : DATETIME
+}
+
+entity tecnico_grupos {
+  *tecnico_id : INT
+  *grupo_id : INT
+}
+
+entity reglas_asignacion {
+  *id : INT
+  --
+  palabras_clave : VARCHAR
+  grupo_id : INT
+  tecnico_id : INT
+  prioridad : INT
+  activo : TINYINT
+  creado_en : DATETIME
+}
+
+entity tipos_equipo {
+  *id : INT
+  --
+  nombre : VARCHAR
+}
+
+entity equipos {
+  *id : INT
+  --
+  cliente_id : INT
+  tipo_id : INT
+  marca : VARCHAR
+  modelo : VARCHAR
+  serie : VARCHAR
+  color : VARCHAR
+  accesorios : VARCHAR
+  descripcion : TEXT
+  creado_en : DATETIME
+  actualizado_en : DATETIME
+}
+
+entity estados_orden {
+  *id : INT
+  --
+  nombre : VARCHAR
+  orden : INT
+}
+
+entity ordenes_servicio {
+  *id : INT
+  --
+  codigo : VARCHAR
+  cliente_id : INT
+  equipo_id : INT
+  tecnico_id : INT
+  grupo_id : INT
+  estado_id : INT
+  fecha_recepcion : DATETIME
+  fecha_entrega_estimada : DATETIME
+  fecha_entrega_real : DATETIME
+  falla_reportada : TEXT
+  diagnostico : TEXT
+  observaciones : TEXT
+  costo_estimado : DECIMAL
+  costo_final : DECIMAL
+  garantia_dias : INT
+  creado_en : DATETIME
+  actualizado_en : DATETIME
+}
+
+entity ordenes_historial {
+  *id : INT
+  --
+  orden_id : INT
+  estado_id : INT
+  usuario_id : INT
+  comentario : TEXT
+  fecha : DATETIME
+}
+
+entity pagos {
+  *id : INT
+  --
+  orden_id : INT
+  cliente_id : INT
+  usuario_id : INT
+  metodo : VARCHAR
+  valor : DECIMAL
+  referencia : VARCHAR
+  fecha : DATETIME
+}
+
+roles ||--o{ usuarios : rol_id
+clientes ||--o{ usuarios : cliente_id
+clientes ||--o{ equipos : cliente_id
+tipos_equipo ||--o{ equipos : tipo_id
+clientes ||--o{ ordenes_servicio : cliente_id
+equipos ||--o{ ordenes_servicio : equipo_id
+tecnicos ||--o{ ordenes_servicio : tecnico_id
+grupos_responsables ||--o{ ordenes_servicio : grupo_id
+estados_orden ||--o{ ordenes_servicio : estado_id
+ordenes_servicio ||--o{ ordenes_historial : orden_id
+estados_orden ||--o{ ordenes_historial : estado_id
+usuarios ||--o{ ordenes_historial : usuario_id
+ordenes_servicio ||--o{ pagos : orden_id
+clientes ||--o{ pagos : cliente_id
+usuarios ||--o{ pagos : usuario_id
+tecnicos ||--o{ tecnico_grupos : tecnico_id
+grupos_responsables ||--o{ tecnico_grupos : grupo_id
+grupos_responsables ||--o{ reglas_asignacion : grupo_id
+tecnicos ||--o{ reglas_asignacion : tecnico_id
+
+@enduml
