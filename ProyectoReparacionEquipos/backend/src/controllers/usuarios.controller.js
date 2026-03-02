@@ -23,6 +23,75 @@ const countActiveAdmins = async () => {
   return Number(rows?.[0]?.total || 0);
 };
 
+const isDuplicateError = (message) => String(message || "").toLowerCase().includes("duplicate");
+
+const validateUsuarioPayload = ({ nombre, apellido, email, rol_id }, res) => {
+  if (!nombre || !apellido || !email || !rol_id) {
+    badRequest(res, "nombre, apellido, email y rol_id son requeridos");
+    return false;
+  }
+  return true;
+};
+
+const canLoseAdminPrivileges = ({ currentRoleId, targetRoleId, adminRoleId, activo }) => {
+  const isCurrentAdmin = Number(currentRoleId) === Number(adminRoleId);
+  return {
+    becomingNotAdmin: isCurrentAdmin && Number(targetRoleId) !== Number(adminRoleId),
+    disablingAdmin: isCurrentAdmin && activo === false,
+  };
+};
+
+const ensureAdminSafeguards = async ({
+  reqUserId,
+  targetUserId,
+  currentRoleId,
+  targetRoleId,
+  adminRoleId,
+  activo,
+  currentActivo,
+}) => {
+  const { becomingNotAdmin, disablingAdmin } = canLoseAdminPrivileges({
+    currentRoleId,
+    targetRoleId,
+    adminRoleId,
+    activo,
+  });
+
+  if (!becomingNotAdmin && !disablingAdmin) return null;
+
+  if (Number(reqUserId) === Number(targetUserId)) {
+    return "no puedes quitarte permisos de administrador a ti mismo";
+  }
+
+  const totalAdmins = await countActiveAdmins();
+  if (totalAdmins <= 1 && currentActivo) {
+    return "no se puede dejar el sistema sin administradores activos";
+  }
+
+  return null;
+};
+
+const syncClienteFromUser = async ({ clienteId, roleName, nombre, apellido, telefono, email }) => {
+  if (roleName !== "Cliente") return clienteId || null;
+
+  if (clienteId) {
+    await pool.query(
+      `UPDATE clientes
+       SET nombre = ?, apellido = ?, telefono = ?, email = ?
+       WHERE id = ?`,
+      [nombre, apellido, telefono || null, email, clienteId]
+    );
+    return clienteId;
+  }
+
+  const [clienteResult] = await pool.query(
+    `INSERT INTO clientes (nombre, apellido, telefono, email)
+     VALUES (?, ?, ?, ?)`,
+    [nombre, apellido, telefono || null, email]
+  );
+  return clienteResult.insertId;
+};
+
 const syncTecnicoFromUser = async ({ id, rolNombre, nombre, apellido, email, telefono, activo }) => {
   if (rolNombre !== "Tecnico") return;
   const [rows] = await pool.query("SELECT id FROM tecnicos WHERE email = ? LIMIT 1", [email]);
@@ -135,9 +204,7 @@ export const updateUsuario = async (req, res) => {
   if (!id) return badRequest(res, "id invalido");
 
   const { nombre, apellido, email, telefono, rol_id, activo } = req.body || {};
-  if (!nombre || !apellido || !email || !rol_id) {
-    return badRequest(res, "nombre, apellido, email y rol_id son requeridos");
-  }
+  if (!validateUsuarioPayload({ nombre, apellido, email, rol_id }, res)) return;
 
   try {
     const [[current]] = await pool.query(
@@ -153,38 +220,27 @@ export const updateUsuario = async (req, res) => {
     if (!targetRole) return badRequest(res, "rol_id invalido");
 
     const adminRoleId = await getAdminRoleId();
-    const becomingNotAdmin = Number(current.rol_id) === Number(adminRoleId) && Number(targetRole.id) !== Number(adminRoleId);
-    const disablingAdmin = Number(current.rol_id) === Number(adminRoleId) && activo === false;
-
-    if ((becomingNotAdmin || disablingAdmin) && Number(req.user?.id) === Number(id)) {
-      return res.status(400).json({ error: "no puedes quitarte permisos de administrador a ti mismo" });
+    const adminSafeguardError = await ensureAdminSafeguards({
+      reqUserId: req.user?.id,
+      targetUserId: id,
+      currentRoleId: current.rol_id,
+      targetRoleId: targetRole.id,
+      adminRoleId,
+      activo,
+      currentActivo: current.activo,
+    });
+    if (adminSafeguardError) {
+      return res.status(400).json({ error: adminSafeguardError });
     }
 
-    if (becomingNotAdmin || disablingAdmin) {
-      const totalAdmins = await countActiveAdmins();
-      if (totalAdmins <= 1 && current.activo) {
-        return res.status(400).json({ error: "no se puede dejar el sistema sin administradores activos" });
-      }
-    }
-
-    let clienteIdFinal = current.cliente_id || null;
-    if (targetRole.nombre === "Cliente") {
-      if (clienteIdFinal) {
-        await pool.query(
-          `UPDATE clientes
-           SET nombre = ?, apellido = ?, telefono = ?, email = ?
-           WHERE id = ?`,
-          [nombre, apellido, telefono || null, email, clienteIdFinal]
-        );
-      } else {
-        const [clienteResult] = await pool.query(
-          `INSERT INTO clientes (nombre, apellido, telefono, email)
-           VALUES (?, ?, ?, ?)`,
-          [nombre, apellido, telefono || null, email]
-        );
-        clienteIdFinal = clienteResult.insertId;
-      }
-    }
+    const clienteIdFinal = await syncClienteFromUser({
+      clienteId: current.cliente_id,
+      roleName: targetRole.nombre,
+      nombre,
+      apellido,
+      telefono,
+      email,
+    });
 
     await pool.query(
       `UPDATE usuarios
@@ -206,7 +262,7 @@ export const updateUsuario = async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     const message = String(err.message || err);
-    if (message.toLowerCase().includes("duplicate")) {
+    if (isDuplicateError(message)) {
       return res.status(409).json({ error: "email ya registrado" });
     }
     res.status(500).json({ error: message });
